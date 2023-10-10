@@ -8,3 +8,6 @@
 *.pydevproject
 *.idea
 *.spyproject
+.datas
+.venv/
+__pycache__
