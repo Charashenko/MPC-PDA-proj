@@ -1,0 +1,29 @@
+run
+    x
+    y
+    health
+    gunHeading
+    heading
+    radarHeading
+onHitByRobot
+    notif
+onHitWall
+    notif
+onRobotHit
+    notif
+onHitByBullet
+    bulletPower
+onBulletHit
+    notif
+    bulletId
+onBulletMiss
+    notif
+    bulletId
+onRobotDeath
+    notif
+onTargetSpotted
+    botPos
+dict "shot bulletIDs"
+    bulletId
+        heading
+        power

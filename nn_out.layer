@@ -1,0 +1,17 @@
+move
+    -1 = current max calculated with trigonometry (back)
+    1 = current max calculated with trigonometry (forward)
+turn
+    -1 = -180
+    1 = 180
+stop
+    1
+fire
+    -1 = 1
+    1 = 10
+radarTurn
+    -1 = -180
+    1 = 180
+pause
+    ??? = unknown max of ticks
+
