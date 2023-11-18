@@ -19,10 +19,14 @@ onBulletHit
 onBulletMiss
     notif
     bulletId
-onRobotDeath
-    notif
 onTargetSpotted
     botPos
+        pos_x
+        pos_y
+numOfOpponents
+    num
+onRobotDeath
+    notif
 dict "shot bulletIDs"
     bulletId
         heading
