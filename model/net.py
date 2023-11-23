@@ -1,0 +1,148 @@
+import tensorflow as tf
+from tf_agents.utils import common
+from tf_agents.policies import random_tf_policy
+from tf_agents.replay_buffers import reverb_replay_buffer
+from tf_agents.replay_buffers import reverb_utils
+from tf_agents.trajectories import trajectory
+from tf_agents.specs import tensor_spec
+from tf_agents.policies import py_tf_eager_policy
+from tf_agents.agents.reinforce import reinforce_agent
+from tf_agents.networks import actor_distribution_network
+from tf_agents.agents.dqn import dqn_agent
+from tf_agents.networks import q_rnn_network
+
+# import reverb
+
+INPUT_SIZE = 14
+NUM_ACTIONS = 5
+LAYER_PARAMS = (INPUT_SIZE,)
+LEARNING_RATE = 0.01
+NUM_EVAL_EPISODES = 10
+
+
+class Net:
+    def __init__(self, env):
+        self.env = env
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
+        self.train_step_counter = tf.Variable(0)
+
+        # self.nn = actor_distribution_network.ActorDistributionNetwork(
+        #     self.env.observation_spec(),
+        #     self.env.action_spec(),
+        #     kernel_initializer=tf.keras.initializers.RandomUniform(
+        #         minval=-0.03, maxval=0.03
+        #     ),
+        #     fc_layer_params=LAYER_PARAMS,
+        # )
+
+        # self.agent = reinforce_agent.ReinforceAgent(
+        #     self.env.time_step_spec(),
+        #     self.env.action_spec(),
+        #     actor_network=self.nn,
+        #     optimizer=self.optimizer,
+        #     normalize_returns=True,
+        #     train_step_counter=self.train_step_counter,
+        # )
+
+        # layers = [
+        #     # tf.keras.Input(shape=(INPUT_SIZE,)),
+        #     tf.keras.layers.LSTM(INPUT_SIZE),
+        # ]
+
+        # dense_layers = [self._dense_layer(num_units) for num_units in LAYER_PARAMS]
+        # layers += dense_layers
+
+        # q_values_layer = tf.keras.layers.Dense(
+        #     NUM_ACTIONS,
+        #     activation=None,
+        #     kernel_initializer=tf.keras.initializers.RandomUniform(
+        #         minval=-0.03, maxval=0.03
+        #     ),
+        #     bias_initializer=tf.keras.initializers.Constant(-0.2),
+        # )
+        # layers.append(q_values_layer)
+
+        # self.model = tf.keras.models.Sequential(layers)
+
+        self.model = q_rnn_network.QRnnNetwork(
+            self.env.observation_spec(),
+            self.env.action_spec(),
+            lstm_size=(INPUT_SIZE,),
+        )
+
+        self.agent = dqn_agent.DqnAgent(
+            self.env.time_step_spec(),
+            self.env.action_spec(),
+            q_network=self.model,
+            optimizer=self.optimizer,
+            td_errors_loss_fn=common.element_wise_squared_loss,
+            train_step_counter=self.train_step_counter,
+        )
+
+        self.agent.initialize()
+        # self._conf_reverb()
+        self._start_train()
+
+    def _dense_layer(self, num_units):
+        return tf.keras.layers.Dense(
+            num_units,
+            activation=tf.keras.activations.relu,
+            kernel_initializer=tf.keras.initializers.VarianceScaling(
+                scale=2.0, mode="fan_in", distribution="truncated_normal"
+            ),
+        )
+
+    def _conf_reverb(self):
+        table_name = "uniform_table"
+        replay_buffer_signature = tensor_spec.from_spec(self.agent.collect_data_spec)
+        replay_buffer_signature = tensor_spec.add_outer_dim(replay_buffer_signature)
+
+        table = reverb.Table(
+            table_name,
+            max_size=replay_buffer_max_length,
+            sampler=reverb.selectors.Uniform(),
+            remover=reverb.selectors.Fifo(),
+            rate_limiter=reverb.rate_limiters.MinSize(1),
+            signature=replay_buffer_signature,
+        )
+
+        self.reverb_server = reverb.Server([table])
+
+        self.replay_buffer = reverb_replay_buffer.ReverbReplayBuffer(
+            self.agent.collect_data_spec,
+            table_name=table_name,
+            sequence_length=2,
+            local_server=self.reverb_server,
+        )
+
+        self.rb_observer = reverb_utils.ReverbAddTrajectoryObserver(
+            self.replay_buffer.py_client, table_name, sequence_length=2
+        )
+
+    def _start_train(self):
+        self.agent.train_step_counter.assign(0)
+        # self.avg_return = self.compute_avg_return(
+        #     self.env,
+        #     self.agent.policy,
+        #     NUM_EVAL_EPISODES,
+        # )
+        # self.returns = [avg_return]
+        self.time_step = self.env.reset()
+
+        # self.collect_driver = py_driver.PyDriver(
+        #     self.env,
+        #     py_tf_eager_policy.PyTFEagerPolicy(
+        #         self.agent.collect_policy, use_tf_function=True
+        #     ),
+        #     [self.b_observer],
+        #     max_steps=collect_steps_per_iteration,
+        # )
+
+    def collect_episode(self, policy):
+        driver = py_driver.PyDriver(
+            self.env,
+            py_tf_eager_policy.PyTFEagerPolicy(policy, use_tf_function=True),
+            [self.rb_observer],
+            max_episodes=1,
+        )
+        driver.run(self.time_step)
