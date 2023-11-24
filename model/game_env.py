@@ -16,6 +16,8 @@ from tf_agents.environments import wrappers
 from tf_agents.environments import suite_gym
 from tf_agents.trajectories import time_step as ts
 
+from utils import get_action_mapping
+
 OBSERVATION_SPEC_SIZE = 13
 ACTION_SPEC_SIZE = 8
 # DEBUG
@@ -70,6 +72,7 @@ class GameEnv(py_environment.PyEnvironment):
         # DEBUG
         global OPPS
         # -----
+        reward = 0
         if self._episode_ended:
             return self.reset()
 
@@ -87,11 +90,59 @@ class GameEnv(py_environment.PyEnvironment):
             # DEBUG
             OPPS -= 1
             # -----
+            reward = self._calculate_reward(self._state[-7:], action.tolist())
+            print(f"State: {self._state}")
+            print(f"Reward: {reward}")
+            print(" ")
             return ts.transition(
                 np.array(self._state, dtype=np.float64),
-                reward=0,
+                reward=reward,
                 discount=1.0,
             )
+
+    def _calculate_reward(self, events, action):
+        reward = 0
+        action_mappings = get_action_mapping()
+        # on hit by robot
+        if events[0] == 1:
+            reward -= 1
+            if action_mappings.get(action) not in ["move", "turn"]:
+                reward -= 1
+        # on hit wall
+        if events[1] == 1:
+            reward -= 1
+            if action_mappings.get(action) not in ["turn"]:
+                reward -= 1
+        # on robot hit
+        if events[2] == 1:
+            reward += 1
+            if action_mappings.get(action) not in ["fire", "move"]:
+                reward -= 1
+            else:
+                reward += 1
+        # on hit by bullet
+        if events[3] == 1:
+            reward -= 1
+            if action_mappings.get(action) not in ["move", "turn"]:
+                reward -= 1
+        # on bullet hit
+        if events[4] == 1:
+            reward += 1
+            if action_mappings.get(action) not in ["radarTurn", "gunTurn", "fire"]:
+                reward -= 1
+            else:
+                reward += 1
+        # on bullet miss
+        if events[5] == 1:
+            reward -= 3
+            if action_mappings.get(action) not in ["radarTurn", "gunTurn", "fire"]:
+                reward -= 1
+        # on target spotted
+        if events[6] == 1:
+            reward += 1
+            if action_mappings.get(action) in ["fire"]:
+                reward += 1
+        return reward
 
 
 # DEBUG

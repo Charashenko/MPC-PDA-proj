@@ -21,6 +21,7 @@ from model.game_env import GameEnv
 
 class AI(Robot):
     def init(self):
+        print("dead")
         self.robot_dead = False
         self.data_processor = DataProcessor(self.getMapSize())
 
@@ -128,6 +129,9 @@ class AI(Robot):
             7: self.gunTurn,
             8: self.fire,
         }
+        if action == 8:
+            actions[action](5)
+            return
         action_heading = 1 if action % 2 == 0 else -1
         actions[action](action_heading)
 

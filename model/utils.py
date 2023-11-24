@@ -69,3 +69,17 @@ class DataProcessor:
 
     def notif(self, data):
         return 1 if data else -1
+
+
+def get_action_mapping():
+    return {
+        0: "move",
+        1: "move",
+        2: "turn",
+        3: "turn",
+        4: "radarTurn",
+        5: "radarTurn",
+        6: "gunTurn",
+        7: "gunTurn",
+        8: "fire",
+    }
