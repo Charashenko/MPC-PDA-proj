@@ -16,7 +16,8 @@ from tf_agents.environments import wrappers
 from tf_agents.environments import suite_gym
 from tf_agents.trajectories import time_step as ts
 
-OBSERVATION_SPEC_SIZE = 14
+OBSERVATION_SPEC_SIZE = 12
+ACTION_SPEC_SIZE = 8
 # DEBUG
 OPPS = 10
 # -----
@@ -28,20 +29,18 @@ class GameEnv(py_environment.PyEnvironment):
         state_getter: callable,
         num_of_opponents_getter: callable,
         on_robot_death_getter: callable,
+        action_exec: callable,
     ):
         self._action_spec = array_spec.BoundedArraySpec(
             shape=(),
             dtype=np.int32,
             minimum=0,
-            maximum=4,
+            maximum=ACTION_SPEC_SIZE,
             name="action",
         )
 
         self._observation_spec = array_spec.BoundedArraySpec(
-            shape=(
-                1,
-                OBSERVATION_SPEC_SIZE,
-            ),
+            shape=(OBSERVATION_SPEC_SIZE,),
             dtype=np.float64,
             minimum=-1,
             maximum=1,
@@ -54,6 +53,7 @@ class GameEnv(py_environment.PyEnvironment):
         self._state_getter = state_getter
         self._num_of_opponents_getter = num_of_opponents_getter
         self._init_num_of_opponents = num_of_opponents_getter()
+        self._action_exec = action_exec
 
     def action_spec(self):
         return self._action_spec
@@ -78,17 +78,20 @@ class GameEnv(py_environment.PyEnvironment):
         if self._num_of_opponents_getter() == 0 or self._on_robot_death_getter():
             self._episode_ended = True
         else:
-            # TODO feed to RL network here
-            pass
+            self._action_exec(action)
 
         if self._episode_ended:
             reward = self._init_num_of_opponents - self._num_of_opponents_getter()
-            return ts.termination(self._state, reward)
+            return ts.termination(np.array(self._state, dtype=np.float64), reward)
         else:
             # DEBUG
             OPPS -= 1
             # -----
-            return ts.transition(self._state, reward=0.0, discount=1.0)
+            return ts.transition(
+                np.array(self._state, dtype=np.float64),
+                reward=0,
+                discount=1.0,
+            )
 
 
 # DEBUG

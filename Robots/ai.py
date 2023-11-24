@@ -11,8 +11,6 @@ from tf_agents.environments import wrappers
 from tf_agents.drivers import py_driver
 from tf_agents.metrics import py_metrics
 from tf_agents.policies import random_py_policy
-from tf_agents.trajectories import time_step as ts
-from tf_agents.policies import q_policy
 
 sys.path.append(os.getcwd() + "/model/")
 
@@ -26,10 +24,13 @@ class AI(Robot):
         self.robot_dead = False
         self.data_processor = DataProcessor(self.getMapSize())
 
-        self.env = GameEnv(
-            state_getter=self.get_state,
-            num_of_opponents_getter=self.get_num_of_opps,
-            on_robot_death_getter=self.get_robot_death,
+        self.env = tf_py_environment.TFPyEnvironment(
+            GameEnv(
+                state_getter=self.get_state,
+                num_of_opponents_getter=self.get_num_of_opps,
+                on_robot_death_getter=self.get_robot_death,
+                action_exec=self.action_exec,
+            )
         )
 
         self.nn = Net(self.env)
@@ -103,49 +104,27 @@ class AI(Robot):
             on_bullet_hit,
             on_bullet_miss,
         ]
-        return tf.convert_to_tensor(np.array(state))
+        return state
 
     def get_robot_death(self):
         return self.robot_dead
 
     def tick(self):
-        # self.nn.collect_episode(self.env, self.agent.collect_policy)
+        action_step = self.nn.policy.action(self.time_step)
+        self.time_step = self.nn.env.step(action_step.action)
 
-        # iterator = iter(self.nn.replay_buffer.as_dataset(sample_batch_size=1))
-        # trajectories, _ = next(iterator)
-        # train_loss = self.nn.agent
-
-        # step = self.nn.agent.train_step_counter.numpy()
-
-        # print("step = {0}: loss = {1}".format(step, train_loss.loss))
-        metric = py_metrics.AverageReturnMetric()
-        observers = [metric]
-
-        print(self.nn.agent.time_step_spec.observation)
-        batch_size = 1
-        observation = tf.ones(self.nn.agent.time_step_spec.observation)
-        time_steps = ts.restart(observation, batch_size=batch_size)
-
-        my_q_policy = q_policy.QPolicy(
-            self.nn.agent.time_step_spec,
-            self.nn.agent.action_spec,
-            q_network=self.nn.model,
-        )
-        action_step = my_q_policy.action(time_steps)
-        distribution_step = my_q_policy.distribution(time_steps)
-
-        print("Action:")
-        print(action_step.action)
-
-        print("Action distribution:")
-        print(distribution_step.action)
-
-        self.driver = py_driver.PyDriver(
-            self.env,
-            my_q_policy,
-            observers,
-            max_steps=10,
-            max_episodes=1,
-        )
-
-        print(metric.result())
+    def action_exec(self, action):
+        action = action.tolist()
+        actions = {
+            0: self.move,
+            1: self.move,
+            2: self.turn,
+            3: self.turn,
+            4: self.radarTurn,
+            5: self.radarTurn,
+            6: self.gunTurn,
+            7: self.gunTurn,
+            8: self.fire,
+        }
+        action_heading = 1 if action % 2 == 0 else -1
+        actions[action](action_heading)
