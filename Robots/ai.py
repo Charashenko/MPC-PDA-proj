@@ -36,7 +36,15 @@ class AI(Robot):
         self.nn = Net(self.env)
         self.time_step = self.nn.time_step
 
-        self.buffer = []
+        self.event_buffer = {
+            "onhitbyrobot": False,
+            "onhitwall": False,
+            "onrobothit": False,
+            "onhitbybullet": False,
+            "onbullethit": False,
+            "onbulletmiss": False,
+            "ontargetspotted": False,
+        }
 
         self.setColor(250, 10, 20)
         self.setGunColor(0, 0, 0)
@@ -50,45 +58,37 @@ class AI(Robot):
     def run(self):
         pass
 
-    def onHitWall(self):
-        pass
-
     def sensors(self):
         self.tick()
 
+    def onHitWall(self):
+        self.event_buffer["onhitwall"] = True
+
     def onRobotHit(self, robotId, robotName):
-        pass
+        self.event_buffer["onrobothit"] = True
 
     def onHitByRobot(self, robotId, robotName):
-        pass
+        self.event_buffer["onhitbyrobot"] = True
 
     def onHitByBullet(self, bulletBotId, bulletBotName, bulletPower):
-        pass
+        self.event_buffer["onhitbybullet"] = True
 
     def onBulletHit(self, botId, bulletId):
-        pass
+        self.event_buffer["onbullethit"] = True
 
     def onBulletMiss(self, bulletId):
-        pass
+        self.event_buffer["onbulletmiss"] = True
+
+    def onTargetSpotted(self, botId, botName, botPos):
+        self.event_buffer["ontargetspotted"] = True
 
     def onRobotDeath(self):
         self.robot_dead = True
 
-    def onTargetSpotted(self, botId, botName, botPos):
-        pass
-
     def get_num_of_opps(self):
         return len(self.getEnemiesLeft())
 
-    def get_state(
-        self,
-        on_hit_by_bot=0,
-        on_hit_wall=0,
-        on_robot_hit=0,
-        on_hit_by_bullet=0,
-        on_bullet_hit=0,
-        on_bullet_miss=0,
-    ):
+    def get_state(self):
         pos = self.getPosition()
         state = [
             self.data_processor.pos_x(pos.x()),
@@ -97,13 +97,15 @@ class AI(Robot):
             self.data_processor.gun_heading(self.getGunHeading()),
             self.data_processor.tank_heading(self.getHeading()),
             self.data_processor.radar_heading(self.getRadarHeading()),
-            on_hit_by_bot,
-            on_hit_wall,
-            on_robot_hit,
-            on_hit_by_bullet,
-            on_bullet_hit,
-            on_bullet_miss,
+            self.data_processor.notif(self.event_buffer["onhitbyrobot"]),
+            self.data_processor.notif(self.event_buffer["onhitwall"]),
+            self.data_processor.notif(self.event_buffer["onrobothit"]),
+            self.data_processor.notif(self.event_buffer["onhitbybullet"]),
+            self.data_processor.notif(self.event_buffer["onbullethit"]),
+            self.data_processor.notif(self.event_buffer["onbulletmiss"]),
+            self.data_processor.notif(self.event_buffer["ontargetspotted"]),
         ]
+        self.clear_event_buffer()
         return state
 
     def get_robot_death(self):
@@ -128,3 +130,7 @@ class AI(Robot):
         }
         action_heading = 1 if action % 2 == 0 else -1
         actions[action](action_heading)
+
+    def clear_event_buffer(self):
+        for event in self.event_buffer.keys():
+            self.event_buffer[event] = False

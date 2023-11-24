@@ -16,7 +16,7 @@ from tf_agents.policies import q_policy
 
 # import reverb
 
-INPUT_SIZE = 12
+INPUT_SIZE = 13
 NUM_ACTIONS = 5
 LAYER_PARAMS = (INPUT_SIZE,)
 LEARNING_RATE = 0.01

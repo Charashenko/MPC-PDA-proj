@@ -16,7 +16,7 @@ from tf_agents.environments import wrappers
 from tf_agents.environments import suite_gym
 from tf_agents.trajectories import time_step as ts
 
-OBSERVATION_SPEC_SIZE = 12
+OBSERVATION_SPEC_SIZE = 13
 ACTION_SPEC_SIZE = 8
 # DEBUG
 OPPS = 10

@@ -66,3 +66,6 @@ class DataProcessor:
     def radar_turn(self, data):
         # Map -1 <-> 1 to -180 <-> 180
         return data * 180
+
+    def notif(self, data):
+        return 1 if data else -1
