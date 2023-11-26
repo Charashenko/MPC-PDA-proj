@@ -67,8 +67,10 @@ class GameEnv(py_environment.PyEnvironment):
         global OPPS
         # -----
         reward = 0
-        if self._episode_ended:
-            return self.reset()
+        # if self._episode_ended:
+        #     print(f"1 end: {self._bot}")
+        #     self._bot.death_ack()
+        #     return self.reset()
 
         self._state = self._bot.get_state()
 
@@ -78,7 +80,10 @@ class GameEnv(py_environment.PyEnvironment):
             self._bot.action_exec(action)
 
         if self._episode_ended:
+            print(f"2 end: {self._bot}")
+            self._bot.death_ack()
             reward = self._init_num_of_opponents - self._bot.get_num_of_opps()
+            self.reset()
             return ts.termination(
                 np.array([self._state], dtype=np.float64),
                 # np.expand_dims(np.array([self._state], dtype=np.float64), axis=-1),
@@ -88,7 +93,7 @@ class GameEnv(py_environment.PyEnvironment):
             # DEBUG
             OPPS -= 1
             # -----
-            reward = self._calculate_reward(self._state[-7:], action.tolist())
+            reward = self._calculate_reward(self._state[-7:], action)
             return ts.transition(
                 np.array([self._state], dtype=np.float64),
                 # np.expand_dims(np.array([self._state], dtype=np.float64), axis=-1),
@@ -97,6 +102,10 @@ class GameEnv(py_environment.PyEnvironment):
             )
 
     def _calculate_reward(self, events, action):
+        if type(action) is np.ndarray:
+            action = action.tolist()
+        if type(action) is list:
+            action = action[0]
         reward = 0
         action_mappings = get_action_mapping()
         # on hit by robot
@@ -118,26 +127,27 @@ class GameEnv(py_environment.PyEnvironment):
                 reward += 1
         # on hit by bullet
         if events[3] == 1:
-            reward -= 1
-            if action_mappings.get(action) not in ["move", "turn"]:
+            reward -= 2
+            if action_mappings.get(action) not in ["move"]:
                 reward -= 1
         # on bullet hit
         if events[4] == 1:
-            reward += 1
-            if action_mappings.get(action) not in ["radarTurn", "gunTurn", "fire"]:
+            reward += 3
+            if action_mappings.get(action) not in ["fire"]:
                 reward -= 1
             else:
                 reward += 1
         # on bullet miss
         if events[5] == 1:
             reward -= 3
-            if action_mappings.get(action) not in ["radarTurn", "gunTurn", "fire"]:
+            if action_mappings.get(action) not in ["radarTurn", "gunTurn"]:
                 reward -= 1
         # on target spotted
         if events[6] == 1:
-            reward += 1
             if action_mappings.get(action) in ["fire"]:
-                reward += 1
+                reward += 2
+            else:
+                reward -= 1
         return reward
 
     def set_bot_instance(self, bot):

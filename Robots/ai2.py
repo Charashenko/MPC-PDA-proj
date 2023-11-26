@@ -19,7 +19,7 @@ from model.net import Net
 from model.game_env import GameEnv
 
 
-class AI(Robot):
+class AI2(Robot):
     def init(self):
         self.robot_dead = False
         self.data_processor = DataProcessor(self.getMapSize())

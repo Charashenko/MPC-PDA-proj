@@ -12,7 +12,7 @@ from ..GUI.outPrint import outPrint
 
 
 class Graph(QGraphicsScene):
-    def __init__(self, parent, width, height):
+    def __init__(self, parent, width, height, battle_count):
         QGraphicsScene.__init__(self, parent)
         self.setSceneRect(0, 0, width, height)
         self.Parent = parent
@@ -22,28 +22,25 @@ class Graph(QGraphicsScene):
         self.height = height
         self.grid = self.getGrid()
         self.setTiles()
+        self.battle_count = battle_count
 
-    def AddRobots(self, botList, nns):
+    def AddRobots(self, botList):
         self.aliveBots = []
         self.deadBots = []
         try:
             posList = random.sample(self.grid, len(botList))
-            for i in range(len(botList)):
+            for bot in botList:
                 try:
-                    robot = botList[i](self.sceneRect().size(), self, str(botList[i]))
-                    if "AI" in str(botList[i]):
-                        # nns[i].env.set_bot_instance(robot)
-                        robot.set_nn(nns[i])
-                    self.aliveBots.append(robot)
-                    self.addItem(robot)
-                    robot.setPos(posList.pop())
-                    self.Parent.addRobotInfo(robot)
+                    # robot = botList[i](self.sceneRect().size(), self, str(botList[i]))
+                    # if "AI" in str(botList[i]):
+                    #     # nns[i].env.set_bot_instance(robot)
+                    #     robot.set_nn(nns[i])
+                    self.aliveBots.append(bot)
+                    self.addItem(bot)
+                    bot.setPos(posList.pop())
+                    self.Parent.addRobotInfo(bot)
                 except Exception as e:
-                    print(
-                        "graph: Problem with bot file '{}': {}".format(
-                            botList[i], str(e)
-                        )
-                    )
+                    print("graph: Problem with bot file '{}': {}".format(bot, str(e)))
 
             self.Parent.battleMenu.close()
         except ValueError:
@@ -52,7 +49,7 @@ class Graph(QGraphicsScene):
             pass
 
     def battleFinished(self):
-        print("battle terminated")
+        print(f"{self.battle_count+1}. battle terminated")
         try:
             self.deadBots.append(self.aliveBots[0])
             self.removeItem(self.aliveBots[0])
@@ -62,6 +59,7 @@ class Graph(QGraphicsScene):
 
         for i in range(j):
             print("N° {}:{}".format(j - i, self.deadBots[i]))
+            self.deadBots[i].reset_health()
             if j - i == 1:  # first place
                 self.Parent.statisticDico[repr(self.deadBots[i])].first += 1
             if j - i == 2:  # 2nd place

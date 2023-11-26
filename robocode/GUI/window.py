@@ -7,7 +7,7 @@ Module implementing MainWindow.
 import os, pickle, sys
 
 from PyQt5.QtWidgets import QMainWindow, QGraphicsScene, QHeaderView, QTableWidgetItem
-from PyQt5.QtCore import pyqtSlot, QTimer
+from PyQt5.QtCore import pyqtSlot, QTimer, QSizeF
 
 from ..Objects.graph import Graph
 from .Ui_window import Ui_MainWindow
@@ -67,13 +67,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.botList = botList
         self.statisticDico = {}
         num_of_opps = len(botList) - 1
+        instances = []
+        idx = 2
         for bot in botList:
             self.statisticDico[self.repres(bot)] = statistic()
+            robot = bot(QSizeF(width, height), None, str(bot))
+            instances.append(robot)
             # Setup networks, agents and environments for each bot
-            self.setup_nn(bot, num_of_opps)
-        self.startBattle()
+            if "AI" in str(bot):
+                self.setup_nn(robot, num_of_opps)
+        self.botList = instances
+        self.startBattle(self.countBattle)
 
-    def startBattle(self):
+    def startBattle(self, battle_count):
         try:
             self.timer.timeout.disconnect(self.scene.advance)
             del self.timer
@@ -86,9 +92,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.countBattle += 1
         self.sceneMenu = QGraphicsScene()
         self.graphicsView_2.setScene(self.sceneMenu)
-        self.scene = Graph(self, self.width, self.height)
+        self.scene = Graph(self, self.width, self.height, battle_count)
+        for bot in self.botList:
+            bot.set_parent(self.scene)
         self.graphicsView.setScene(self.scene)
-        self.scene.AddRobots(self.botList, self.nns)
+        self.scene.AddRobots(self.botList)
         self.timer.timeout.connect(self.scene.advance)
         self.timer.start(int((self.horizontalSlider.value() ** 2) / 100.0))
         self.resizeEvent()
@@ -164,17 +172,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.countBattle = 0
             self.timer.stop()
         else:
-            self.startBattle()
+            self.startBattle(self.countBattle)
 
     def repres(self, bot):
         repres = repr(bot).split(".")
         return repres[1].replace("'>", "")
 
     def setup_nn(self, bot, num_of_opps):
-        if "AI" not in str(bot):
-            return
         env = tf_py_environment.TFPyEnvironment(
             GameEnv(bot=bot, init_num_of_opponents=num_of_opps)
         )
         nn = Net(env)
         self.nns.append(nn)
+        bot.set_nn(nn)

@@ -30,6 +30,12 @@ class Robot(QGraphicsItemGroup):
         self.__targetAnimation = animation("target")
         self.__physics = physics(self.__runAnimation)
 
+        self.init_state()
+
+        # init the subclassed Bot
+        self.init()
+
+    def init_state(self):
         # graphics
         self.maskColor = QColor(0, 255, 255)
         self.gunMaskColor = QColor(0, 255, 255)
@@ -149,9 +155,6 @@ class Robot(QGraphicsItemGroup):
                 self.__roundRadarField,
             ]
         )
-
-        # init the subclassed Bot
-        self.init()
 
         self.__currentAnimation = []
 
@@ -570,7 +573,11 @@ class Robot(QGraphicsItemGroup):
     def removeMyProtectedItem(self, item):
         self.__items.remove(item)
 
+    def reset_health(self):
+        self.__changeHealth(self, 100)
+
     def __death(self):
+        print(f"death: {self}")
         try:
             self.icon.setIcon(QIcon(os.getcwd() + "/robocode/robotImages/dead.png"))
             self.icon2.setIcon(QIcon(os.getcwd() + "/robocode/robotImages/dead.png"))
@@ -587,6 +594,9 @@ class Robot(QGraphicsItemGroup):
         self.__parent.removeItem(self)
         if len(self.__parent.aliveBots) <= 1:
             self.__parent.battleFinished()
+
+    def set_parent(self, parent):
+        self.__parent = parent
 
     def __repr__(self):
         repr = self.__repr.split(".")

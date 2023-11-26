@@ -60,6 +60,11 @@ class Net:
         self.model = q_network.QNetwork(
             self.env.observation_spec(),
             self.env.action_spec(),
+            fc_layer_params=LAYER_PARAMS,
+            kernel_initializer=tf.keras.initializers.RandomUniform(
+                minval=-0.03,
+                maxval=0.03,
+            ),
             # lstm_size=(INPUT_SIZE,),
         )
 
@@ -77,7 +82,7 @@ class Net:
         self.agent.initialize()
         # self._conf_reverb()
         self._init_policy()
-        print(self.model.summary())
+        # print(self.model.summary())
 
     def create_q_model(self):
         # Network defined by the Deepmind paper
@@ -152,7 +157,7 @@ class Net:
         # self.policy_state = self.policy.get_initial_state(self.tf_env.batch_size)
 
     def predict(self):
-        print(self.time_step)
+        # print(self.time_step)
 
         # action_step = self.policy.action(self.time_step, self.policy_state)
         # self.time_step = self.tf_env.step(action_step.action)
