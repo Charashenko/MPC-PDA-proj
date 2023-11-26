@@ -24,18 +24,6 @@ class AI(Robot):
         self.robot_dead = False
         self.data_processor = DataProcessor(self.getMapSize())
 
-        # self.env = tf_py_environment.TFPyEnvironment(
-        #     GameEnv(
-        #         state_getter=self.get_state,
-        #         num_of_opponents_getter=self.get_num_of_opps,
-        #         on_robot_death_getter=self.get_robot_death,
-        #         action_exec=self.action_exec,
-        #     )
-        # )
-
-        # self.nn = Net(self.env)
-        # self.time_step = self.nn.time_step
-
         self.event_buffer = {
             "onhitbyrobot": False,
             "onhitwall": False,
@@ -62,7 +50,8 @@ class AI(Robot):
         pass
 
     def sensors(self):
-        self.nn.predict()
+        # self.nn.predict()
+        pass
 
     def onHitWall(self):
         self.event_buffer["onhitwall"] = True

@@ -55,7 +55,6 @@ class GameEnv(py_environment.PyEnvironment):
 
     def _reset_state(self):
         return np.zeros([OBSERVATION_SPEC_SIZE])
-        # return np.expand_dims(np.zeros(([OBSERVATION_SPEC_SIZE])), axis=-1)
 
     def _reset(self):
         self._state = self._reset_state()
@@ -67,10 +66,10 @@ class GameEnv(py_environment.PyEnvironment):
         global OPPS
         # -----
         reward = 0
-        # if self._episode_ended:
-        #     print(f"1 end: {self._bot}")
-        #     self._bot.death_ack()
-        #     return self.reset()
+        if self._episode_ended:
+            print(f"1 end: {self._bot}")
+            self._bot.death_ack()
+            return self.reset()
 
         self._state = self._bot.get_state()
 
@@ -86,7 +85,6 @@ class GameEnv(py_environment.PyEnvironment):
             self.reset()
             return ts.termination(
                 np.array([self._state], dtype=np.float64),
-                # np.expand_dims(np.array([self._state], dtype=np.float64), axis=-1),
                 reward,
             )
         else:
@@ -96,7 +94,6 @@ class GameEnv(py_environment.PyEnvironment):
             reward = self._calculate_reward(self._state[-7:], action)
             return ts.transition(
                 np.array([self._state], dtype=np.float64),
-                # np.expand_dims(np.array([self._state], dtype=np.float64), axis=-1),
                 reward=reward,
                 discount=1.0,
             )

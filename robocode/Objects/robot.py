@@ -241,6 +241,8 @@ class Robot(QGraphicsItemGroup):
                         # targetSpotted
                         self.__targetSeen(item)
 
+        
+
     ### THESE ARE THE FUNCTIONS ACCESSABLE FROM OUTSIDE ###
 
     # -----------------------------------------------------------Gun------------------------------------------------------
@@ -577,7 +579,6 @@ class Robot(QGraphicsItemGroup):
         self.__changeHealth(self, 100)
 
     def __death(self):
-        print(f"death: {self}")
         try:
             self.icon.setIcon(QIcon(os.getcwd() + "/robocode/robotImages/dead.png"))
             self.icon2.setIcon(QIcon(os.getcwd() + "/robocode/robotImages/dead.png"))
@@ -594,6 +595,9 @@ class Robot(QGraphicsItemGroup):
         self.__parent.removeItem(self)
         if len(self.__parent.aliveBots) <= 1:
             self.__parent.battleFinished()
+
+    def finish_game(self):
+        self.__parent.battleFinished()
 
     def set_parent(self, parent):
         self.__parent = parent

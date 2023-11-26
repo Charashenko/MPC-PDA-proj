@@ -97,9 +97,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             bot.set_parent(self.scene)
         self.graphicsView.setScene(self.scene)
         self.scene.AddRobots(self.botList)
-        self.timer.timeout.connect(self.scene.advance)
+        self.timer.timeout.connect(self.tick)
         self.timer.start(int((self.horizontalSlider.value() ** 2) / 100.0))
         self.resizeEvent()
+
+    def tick(self):
+        for nn in self.nns:
+            nn.predict()
+        self.scene.advance()
 
     @pyqtSlot(int)
     def on_horizontalSlider_valueChanged(self, value):
