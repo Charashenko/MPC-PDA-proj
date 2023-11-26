@@ -1,5 +1,5 @@
 #! /usr/bin/python
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import time, os, random
 
@@ -10,37 +10,40 @@ from PyQt5.QtCore import QPointF, QRectF
 from .robot import Robot
 from ..GUI.outPrint import outPrint
 
+
 class Graph(QGraphicsScene):
-    
-    def __init__(self,  parent, width,  height):
-        QGraphicsScene.__init__(self,  parent)
+    def __init__(self, parent, width, height):
+        QGraphicsScene.__init__(self, parent)
         self.setSceneRect(0, 0, width, height)
         self.Parent = parent
-        
-        #self.Parent.graphicsView.centerOn(250, 250)
+
+        # self.Parent.graphicsView.centerOn(250, 250)
         self.width = width
         self.height = height
         self.grid = self.getGrid()
         self.setTiles()
 
-        
-    def AddRobots(self, botList):
-        
-        """
-        """
+    def AddRobots(self, botList, nns):
         self.aliveBots = []
         self.deadBots = []
         try:
             posList = random.sample(self.grid, len(botList))
-            for bot in botList:
+            for i in range(len(botList)):
                 try:
-                    robot = bot(self.sceneRect().size(), self, str(bot))
+                    robot = botList[i](self.sceneRect().size(), self, str(botList[i]))
+                    if "AI" in str(botList[i]):
+                        nns[i].env.set_bot_instance(robot)
+                        robot.set_nn(nns[i])
                     self.aliveBots.append(robot)
                     self.addItem(robot)
                     robot.setPos(posList.pop())
                     self.Parent.addRobotInfo(robot)
                 except Exception as e:
-                    print("Problem with bot file '{}': {}".format(bot, str(e)))
+                    print(
+                        "graph: Problem with bot file '{}': {}".format(
+                            botList[i], str(e)
+                        )
+                    )
 
             self.Parent.battleMenu.close()
         except ValueError:
@@ -48,7 +51,7 @@ class Graph(QGraphicsScene):
         except AttributeError:
             pass
 
-    def  battleFinished(self):
+    def battleFinished(self):
         print("battle terminated")
         try:
             self.deadBots.append(self.aliveBots[0])
@@ -56,67 +59,65 @@ class Graph(QGraphicsScene):
         except IndexError:
             pass
         j = len(self.deadBots)
-        
-        
+
         for i in range(j):
             print("N° {}:{}".format(j - i, self.deadBots[i]))
-            if j-i == 1: #first place
+            if j - i == 1:  # first place
                 self.Parent.statisticDico[repr(self.deadBots[i])].first += 1
-            if j-i == 2: #2nd place
+            if j - i == 2:  # 2nd place
                 self.Parent.statisticDico[repr(self.deadBots[i])].second += 1
-            if j-i ==3:#3rd place
+            if j - i == 3:  # 3rd place
                 self.Parent.statisticDico[repr(self.deadBots[i])].third += 1
-                
-            self.Parent.statisticDico[repr(self.deadBots[i])].points += i
-                
-        self.Parent.chooseAction()       
 
-                    
+            self.Parent.statisticDico[repr(self.deadBots[i])].points += i
+
+        self.Parent.chooseAction()
+
     def setTiles(self):
-        #background
+        # background
         brush = QBrush()
         pix = QPixmap(os.getcwd() + "/robocode/robotImages/tile.png")
         brush.setTexture(pix)
         brush.setStyle(24)
         self.setBackgroundBrush(brush)
-        
-        #wall
-        #left
+
+        # wall
+        # left
         left = QGraphicsRectItem()
         pix = QPixmap(os.getcwd() + "/robocode/robotImages/tileVert.png")
         left.setRect(QRectF(0, 0, pix.width(), self.height))
         brush.setTexture(pix)
         brush.setStyle(24)
         left.setBrush(brush)
-        left.name = 'left'
+        left.name = "left"
         self.addItem(left)
-        #right
+        # right
         right = QGraphicsRectItem()
         right.setRect(self.width - pix.width(), 0, pix.width(), self.height)
         right.setBrush(brush)
-        right.name = 'right'
+        right.name = "right"
         self.addItem(right)
-        #top
+        # top
         top = QGraphicsRectItem()
         pix = QPixmap(os.getcwd() + "/robocode/robotImages/tileHori.png")
         top.setRect(QRectF(0, 0, self.width, pix.height()))
         brush.setTexture(pix)
         brush.setStyle(24)
         top.setBrush(brush)
-        top.name = 'top'
+        top.name = "top"
         self.addItem(top)
-        #bottom
+        # bottom
         bottom = QGraphicsRectItem()
-        bottom.setRect(0 ,self.height - pix.height() , self.width, pix.height())
+        bottom.setRect(0, self.height - pix.height(), self.width, pix.height())
         bottom.setBrush(brush)
-        bottom.name = 'bottom'
+        bottom.name = "bottom"
         self.addItem(bottom)
-        
+
     def getGrid(self):
-        w = int(self.width/80)
-        h = int(self.height/80)
+        w = int(self.width / 80)
+        h = int(self.height / 80)
         l = []
         for i in range(w):
             for j in range(h):
-                l.append(QPointF((i+0.5)*80, (j+0.5)*80))
+                l.append(QPointF((i + 0.5) * 80, (j + 0.5) * 80))
         return l

@@ -4,7 +4,7 @@
 Module implementing MainWindow.
 """
 
-import os,  pickle
+import os, pickle, sys
 
 from PyQt5.QtWidgets import QMainWindow, QGraphicsScene, QHeaderView, QTableWidgetItem
 from PyQt5.QtCore import pyqtSlot, QTimer
@@ -16,11 +16,21 @@ from ..Objects.robot import Robot
 from .RobotInfo import RobotInfo
 from ..Objects.statistic import statistic
 
+from tf_agents.environments import tf_py_environment
+
+sys.path.append(os.getcwd() + "/model/")
+
+from model.utils import DataProcessor
+from model.net import Net
+from model.game_env import GameEnv
+
+
 class MainWindow(QMainWindow, Ui_MainWindow):
     """
     Class documentation goes here.
     """
-    def __init__(self, parent = None):
+
+    def __init__(self, parent=None):
         """
         Constructor
         """
@@ -30,24 +40,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.timer = QTimer()
         self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tableWidget.hide()
-        
-    
+        self.nns = []
+
     @pyqtSlot()
     def on_pushButton_clicked(self):
         """
         Start the last battle
         """
-        
+
         if os.path.exists(os.getcwd() + "/.datas/lastArena"):
-            with open(os.getcwd() + "/.datas/lastArena",  'rb') as file:
+            with open(os.getcwd() + "/.datas/lastArena", "rb") as file:
                 unpickler = pickle.Unpickler(file)
                 dico = unpickler.load()
             file.close()
         else:
             print("No last arena found.")
 
-        self.setUpBattle(dico["width"] , dico["height"], dico["botList"] )
-        
+        self.setUpBattle(dico["width"], dico["height"], dico["botList"])
+
     def setUpBattle(self, width, height, botList):
         self.tableWidget.clearContents()
         self.tableWidget.hide()
@@ -55,13 +65,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.width = width
         self.height = height
         self.botList = botList
-        self.statisticDico={}
+        self.statisticDico = {}
+        num_of_opps = len(botList) - 1
         for bot in botList:
             self.statisticDico[self.repres(bot)] = statistic()
+            # Setup networks, agents and environments for each bot
+            self.setup_nn(bot, num_of_opps)
         self.startBattle()
-        
+
     def startBattle(self):
-        
         try:
             self.timer.timeout.disconnect(self.scene.advance)
             del self.timer
@@ -69,25 +81,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             del self.sceneMenu
         except:
             pass
-            
+
         self.timer = QTimer()
         self.countBattle += 1
         self.sceneMenu = QGraphicsScene()
         self.graphicsView_2.setScene(self.sceneMenu)
-        self.scene = Graph(self,  self.width,  self.height)
+        self.scene = Graph(self, self.width, self.height)
         self.graphicsView.setScene(self.scene)
-        self.scene.AddRobots(self.botList)
+        self.scene.AddRobots(self.botList, self.nns)
         self.timer.timeout.connect(self.scene.advance)
-        self.timer.start(int((self.horizontalSlider.value()**2)/100.0))
+        self.timer.start(int((self.horizontalSlider.value() ** 2) / 100.0))
         self.resizeEvent()
-    
+
     @pyqtSlot(int)
     def on_horizontalSlider_valueChanged(self, value):
         """
         Slot documentation goes here.
         """
-        self.timer.setInterval(int((value**2)/100.0))
-    
+        self.timer.setInterval(int((value**2) / 100.0))
+
     @pyqtSlot()
     def on_actionNew_triggered(self):
         """
@@ -95,7 +107,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         self.battleMenu = Battle(self)
         self.battleMenu.show()
-    
+
     @pyqtSlot()
     def on_actionNew_2_triggered(self):
         """
@@ -103,7 +115,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         # TODO: not implemented yet
         print("Not Implemented Yet")
-    
+
     @pyqtSlot()
     def on_actionOpen_triggered(self):
         """
@@ -115,7 +127,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def resizeEvent(self, evt=None):
         try:
             self.graphicsView.fitInView(self.scene.sceneRect(), 4)
-        except :
+        except:
             pass
 
     def addRobotInfo(self, robot):
@@ -129,10 +141,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         robot.icon = rb.toolButton
         robot.icon2 = rb.toolButton_2
         p = self.sceneMenu.addWidget(rb)
-        l = (len(self.scene.aliveBots) )
-        self.sceneMenu.setSceneRect(0, 0, 170, l*80)
-        p.setPos(0, (l -1)*80)
-        
+        l = len(self.scene.aliveBots)
+        self.sceneMenu.setSceneRect(0, 0, 170, l * 80)
+        p.setPos(0, (l - 1) * 80)
+
     def chooseAction(self):
         if self.countBattle >= self.spinBox.value():
             "Menu Statistic"
@@ -141,20 +153,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.tableWidget.setRowCount(len(self.statisticDico))
             i = 0
             for key, value in self.statisticDico.items():
-                self.tableWidget.setItem(i, 0,  QTableWidgetItem(key))
-                self.tableWidget.setItem(i, 1,  QTableWidgetItem(str(value.first)))
-                self.tableWidget.setItem(i, 2,  QTableWidgetItem(str(value.second)))
-                self.tableWidget.setItem(i, 3,  QTableWidgetItem(str(value.third)))
-                self.tableWidget.setItem(i, 4,  QTableWidgetItem(str(value.points)))
-               
+                self.tableWidget.setItem(i, 0, QTableWidgetItem(key))
+                self.tableWidget.setItem(i, 1, QTableWidgetItem(str(value.first)))
+                self.tableWidget.setItem(i, 2, QTableWidgetItem(str(value.second)))
+                self.tableWidget.setItem(i, 3, QTableWidgetItem(str(value.third)))
+                self.tableWidget.setItem(i, 4, QTableWidgetItem(str(value.points)))
+
                 i += 1
-                
-                
+
             self.countBattle = 0
             self.timer.stop()
         else:
             self.startBattle()
-            
+
     def repres(self, bot):
         repres = repr(bot).split(".")
         return repres[1].replace("'>", "")
+
+    def setup_nn(self, bot, num_of_opps):
+        if "AI" not in str(bot):
+            return
+        env = GameEnv(bot=bot, init_num_of_opponents=num_of_opps)
+        nn = Net(env)
+        self.nns.append(nn)

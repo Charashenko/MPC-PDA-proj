@@ -21,21 +21,20 @@ from model.game_env import GameEnv
 
 class AI(Robot):
     def init(self):
-        print("dead")
         self.robot_dead = False
         self.data_processor = DataProcessor(self.getMapSize())
 
-        self.env = tf_py_environment.TFPyEnvironment(
-            GameEnv(
-                state_getter=self.get_state,
-                num_of_opponents_getter=self.get_num_of_opps,
-                on_robot_death_getter=self.get_robot_death,
-                action_exec=self.action_exec,
-            )
-        )
+        # self.env = tf_py_environment.TFPyEnvironment(
+        #     GameEnv(
+        #         state_getter=self.get_state,
+        #         num_of_opponents_getter=self.get_num_of_opps,
+        #         on_robot_death_getter=self.get_robot_death,
+        #         action_exec=self.action_exec,
+        #     )
+        # )
 
-        self.nn = Net(self.env)
-        self.time_step = self.nn.time_step
+        # self.nn = Net(self.env)
+        # self.time_step = self.nn.time_step
 
         self.event_buffer = {
             "onhitbyrobot": False,
@@ -56,11 +55,14 @@ class AI(Robot):
         self.setRadarField("thin")
         self.inTheCorner = False
 
+    def set_nn(self, nn):
+        self.nn = nn
+
     def run(self):
         pass
 
     def sensors(self):
-        self.tick()
+        self.nn.predict()
 
     def onHitWall(self):
         self.event_buffer["onhitwall"] = True
@@ -111,10 +113,6 @@ class AI(Robot):
 
     def get_robot_death(self):
         return self.robot_dead
-
-    def tick(self):
-        action_step = self.nn.policy.action(self.time_step)
-        self.time_step = self.nn.env.step(action_step.action)
 
     def action_exec(self, action):
         action = action.tolist()

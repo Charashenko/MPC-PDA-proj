@@ -26,13 +26,7 @@ OPPS = 10
 
 
 class GameEnv(py_environment.PyEnvironment):
-    def __init__(
-        self,
-        state_getter: callable,
-        num_of_opponents_getter: callable,
-        on_robot_death_getter: callable,
-        action_exec: callable,
-    ):
+    def __init__(self, bot, init_num_of_opponents):
         self._action_spec = array_spec.BoundedArraySpec(
             shape=(),
             dtype=np.int32,
@@ -42,20 +36,19 @@ class GameEnv(py_environment.PyEnvironment):
         )
 
         self._observation_spec = array_spec.BoundedArraySpec(
-            shape=(OBSERVATION_SPEC_SIZE,),
+            shape=(
+                OBSERVATION_SPEC_SIZE,
+                1,
+            ),
             dtype=np.float64,
             minimum=-1,
             maximum=1,
             name="observation",
         )
-
-        self._state = np.zeros([OBSERVATION_SPEC_SIZE])
-        self._on_robot_death_getter = on_robot_death_getter
+        self._state = self._reset_state()
         self._episode_ended = False
-        self._state_getter = state_getter
-        self._num_of_opponents_getter = num_of_opponents_getter
-        self._init_num_of_opponents = num_of_opponents_getter()
-        self._action_exec = action_exec
+        self._bot = bot
+        self._init_num_of_opponents = init_num_of_opponents
 
     def action_spec(self):
         return self._action_spec
@@ -63,10 +56,14 @@ class GameEnv(py_environment.PyEnvironment):
     def observation_spec(self):
         return self._observation_spec
 
+    def _reset_state(self):
+        # return np.zeros([OBSERVATION_SPEC_SIZE])
+        return np.expand_dims(np.zeros(([OBSERVATION_SPEC_SIZE])), axis=-1)
+
     def _reset(self):
-        self._state = np.zeros([OBSERVATION_SPEC_SIZE])
+        self._state = self._reset_state()
         self._episode_ended = False
-        return ts.restart(self._state)
+        return ts.restart(self._state, 1)
 
     def _step(self, action):
         # DEBUG
@@ -76,26 +73,28 @@ class GameEnv(py_environment.PyEnvironment):
         if self._episode_ended:
             return self.reset()
 
-        self._state = self._state_getter()
+        self._state = self._bot.get_state()
 
-        if self._num_of_opponents_getter() == 0 or self._on_robot_death_getter():
+        if self._bot.get_num_of_opps() == 0 or self._bot.robot_dead:
             self._episode_ended = True
         else:
-            self._action_exec(action)
+            self._bot.action_exec(action)
 
         if self._episode_ended:
-            reward = self._init_num_of_opponents - self._num_of_opponents_getter()
-            return ts.termination(np.array(self._state, dtype=np.float64), reward)
+            reward = self._init_num_of_opponents - self._bot.get_num_of_opps()
+            return ts.termination(
+                np.array([self._state], dtype=np.float64),
+                # np.expand_dims(np.array([self._state], dtype=np.float64), axis=-1),
+                reward,
+            )
         else:
             # DEBUG
             OPPS -= 1
             # -----
             reward = self._calculate_reward(self._state[-7:], action.tolist())
-            print(f"State: {self._state}")
-            print(f"Reward: {reward}")
-            print(" ")
             return ts.transition(
-                np.array(self._state, dtype=np.float64),
+                np.array([self._state], dtype=np.float64),
+                # np.expand_dims(np.array([self._state], dtype=np.float64), axis=-1),
                 reward=reward,
                 discount=1.0,
             )
@@ -143,6 +142,9 @@ class GameEnv(py_environment.PyEnvironment):
             if action_mappings.get(action) in ["fire"]:
                 reward += 1
         return reward
+
+    def set_bot_instance(self, bot):
+        self._bot = bot
 
 
 # DEBUG
