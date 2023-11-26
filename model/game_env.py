@@ -36,10 +36,7 @@ class GameEnv(py_environment.PyEnvironment):
         )
 
         self._observation_spec = array_spec.BoundedArraySpec(
-            shape=(
-                OBSERVATION_SPEC_SIZE,
-                1,
-            ),
+            shape=(OBSERVATION_SPEC_SIZE,),
             dtype=np.float64,
             minimum=-1,
             maximum=1,
@@ -57,8 +54,8 @@ class GameEnv(py_environment.PyEnvironment):
         return self._observation_spec
 
     def _reset_state(self):
-        # return np.zeros([OBSERVATION_SPEC_SIZE])
-        return np.expand_dims(np.zeros(([OBSERVATION_SPEC_SIZE])), axis=-1)
+        return np.zeros([OBSERVATION_SPEC_SIZE])
+        # return np.expand_dims(np.zeros(([OBSERVATION_SPEC_SIZE])), axis=-1)
 
     def _reset(self):
         self._state = self._reset_state()

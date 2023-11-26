@@ -32,7 +32,7 @@ class Graph(QGraphicsScene):
                 try:
                     robot = botList[i](self.sceneRect().size(), self, str(botList[i]))
                     if "AI" in str(botList[i]):
-                        nns[i].env.set_bot_instance(robot)
+                        # nns[i].env.set_bot_instance(robot)
                         robot.set_nn(nns[i])
                     self.aliveBots.append(robot)
                     self.addItem(robot)

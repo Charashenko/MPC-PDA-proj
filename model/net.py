@@ -33,7 +33,7 @@ class Net:
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
         self.train_step_counter = tf.Variable(0)
 
-        self.tf_env = tf_py_environment.TFPyEnvironment(self.env)
+        # self.tf_env = tf_py_environment.TFPyEnvironment(self.env)
         action_tensor_spec = tensor_spec.from_spec(env.action_spec())
         num_actions = action_tensor_spec.maximum - action_tensor_spec.minimum + 1
 
@@ -57,17 +57,17 @@ class Net:
         # )
         # self.model = tf.keras.models.Sequential(dense_layers + [q_values_layer])
 
-        self.model = q_rnn_network.QRnnNetwork(
-            self.tf_env.observation_spec(),
-            self.tf_env.action_spec(),
-            lstm_size=(INPUT_SIZE,),
+        self.model = q_network.QNetwork(
+            self.env.observation_spec(),
+            self.env.action_spec(),
+            # lstm_size=(INPUT_SIZE,),
         )
 
         # self.model = self.create_q_model()
 
         self.agent = dqn_agent.DqnAgent(
-            self.tf_env.time_step_spec(),
-            self.tf_env.action_spec(),
+            self.env.time_step_spec(),
+            self.env.action_spec(),
             q_network=self.model,
             optimizer=self.optimizer,
             td_errors_loss_fn=common.element_wise_squared_loss,
@@ -149,14 +149,14 @@ class Net:
             self.agent.action_spec,
             q_network=self.model,
         )
-        self.policy_state = self.policy.get_initial_state(self.tf_env.batch_size)
+        # self.policy_state = self.policy.get_initial_state(self.tf_env.batch_size)
 
     def predict(self):
         print(self.time_step)
 
-        action_step = self.policy.action(self.time_step, self.policy_state)
-        self.time_step = self.tf_env.step(action_step.action)
-        self.policy_state = self.policy_step.state
+        # action_step = self.policy.action(self.time_step, self.policy_state)
+        # self.time_step = self.tf_env.step(action_step.action)
+        # self.policy_state = self.policy_step.state
 
-        # action_step = self.policy.action(self.time_step)
-        # self.time_step = self.env.step(action_step.action)
+        action_step = self.policy.action(self.time_step)
+        self.time_step = self.env.step(action_step.action)

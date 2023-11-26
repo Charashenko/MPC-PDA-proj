@@ -173,6 +173,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def setup_nn(self, bot, num_of_opps):
         if "AI" not in str(bot):
             return
-        env = GameEnv(bot=bot, init_num_of_opponents=num_of_opps)
+        env = tf_py_environment.TFPyEnvironment(
+            GameEnv(bot=bot, init_num_of_opponents=num_of_opps)
+        )
         nn = Net(env)
         self.nns.append(nn)
