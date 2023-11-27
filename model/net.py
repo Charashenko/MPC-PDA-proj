@@ -39,6 +39,8 @@ class Net:
         self.env = env
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
         self.train_step_counter = tf.Variable(0)
+        self.rewards = []
+        self.episode_reward = 0
 
         self.model = q_network.QNetwork(
             self.env.observation_spec(),
@@ -90,9 +92,21 @@ class Net:
         )
 
     def predict(self):
+        print(f"predict: {self.bot}")
         action_step = self.policy.action(self.time_step)
         self.time_step = self.env.step(action_step.action)
+        if self.time_step.is_last():
+            print(f"last: {self.bot}")
+            self.rewards.append(self.episode_reward)
+            self.episode_reward = 0
+        elif self.time_step.is_first():
+            print(f"first: {self.bot}")
+        else:
+            self.episode_reward += self.time_step.reward
 
     def train(self):
         dataset = self.replay_buffer.as_dataset(sample_batch_size=1, num_steps=10)
         print(dataset)
+
+    def set_bot(self, bot):
+        self.bot = bot

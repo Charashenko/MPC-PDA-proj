@@ -67,8 +67,6 @@ class GameEnv(py_environment.PyEnvironment):
         # -----
         reward = 0
         if self._episode_ended:
-            print(f"1 end: {self._bot}")
-            self._bot.death_ack()
             return self.reset()
 
         self._state = self._bot.get_state()
@@ -79,10 +77,8 @@ class GameEnv(py_environment.PyEnvironment):
             self._bot.action_exec(action)
 
         if self._episode_ended:
-            print(f"2 end: {self._bot}")
             self._bot.death_ack()
             reward = self._init_num_of_opponents - self._bot.get_num_of_opps()
-            self.reset()
             return ts.termination(
                 np.array([self._state], dtype=np.float64),
                 reward,
@@ -141,6 +137,7 @@ class GameEnv(py_environment.PyEnvironment):
                 reward -= 1
         # on target spotted
         if events[6] == 1:
+            self._bot.fire(5)
             if action_mappings.get(action) in ["fire"]:
                 reward += 2
             else:

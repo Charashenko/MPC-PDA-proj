@@ -51,8 +51,12 @@ class Graph(QGraphicsScene):
     def battleFinished(self):
         print(f"{self.battle_count+1}. battle terminated")
         try:
-            self.deadBots.append(self.aliveBots[0])
-            self.removeItem(self.aliveBots[0])
+            for robot in self.aliveBots:
+                if robot.ai:
+                    robot.robot_dead = True
+                    print(f"override: {robot}")
+            self.deadBots.append(robot)
+            self.removeItem(robot)
         except IndexError:
             pass
         j = len(self.deadBots)
@@ -68,6 +72,11 @@ class Graph(QGraphicsScene):
                 self.Parent.statisticDico[repr(self.deadBots[i])].third += 1
 
             self.Parent.statisticDico[repr(self.deadBots[i])].points += i
+
+        for robot in self.deadBots:
+            if robot.ai:
+                if robot.robot_dead:
+                    robot.nn.predict()
 
         self.Parent.chooseAction()
 

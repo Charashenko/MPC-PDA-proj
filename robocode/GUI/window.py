@@ -59,6 +59,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setUpBattle(dico["width"], dico["height"], dico["botList"])
 
     def setUpBattle(self, width, height, botList):
+        self.countBattle = 0
         self.tableWidget.clearContents()
         self.tableWidget.hide()
         self.graphicsView.show()
@@ -103,7 +104,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def tick(self):
         for nn in self.nns:
-            nn.predict()
+            if nn.bot in self.scene.aliveBots:
+                nn.predict()
         self.scene.advance()
 
     @pyqtSlot(int)
@@ -174,9 +176,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
                 i += 1
 
-            self.countBattle = 0
             self.timer.stop()
+            for nn in self.nns:
+                print(f"{nn.bot}: {len(nn.rewards)}")
+            self.countBattle = 0
         else:
+            print(f"{self.countBattle}. battle started")
             self.startBattle(self.countBattle)
 
     def repres(self, bot):
@@ -190,3 +195,4 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         nn = Net(env)
         self.nns.append(nn)
         bot.set_nn(nn)
+        nn.set_bot(bot)

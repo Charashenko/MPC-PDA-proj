@@ -18,9 +18,13 @@ from model.utils import DataProcessor
 from model.net import Net
 from model.game_env import GameEnv
 
+import random
+
 
 class AI(Robot):
     def init(self):
+        self.name = "abcdefghjk"[random.randint(0, 9)].upper()
+        self.ai = True
         self.robot_dead = False
         self.data_processor = DataProcessor(self.getMapSize())
 
@@ -100,9 +104,6 @@ class AI(Robot):
         self.clear_event_buffer()
         return state
 
-    def get_robot_death(self):
-        return self.robot_dead
-
     def action_exec(self, action):
         action = action.tolist()
         if type(action) is list:
@@ -130,3 +131,6 @@ class AI(Robot):
 
     def death_ack(self):
         self.robot_dead = False
+
+    def __str__(self):
+        return self.name

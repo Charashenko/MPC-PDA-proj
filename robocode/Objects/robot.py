@@ -18,6 +18,7 @@ class Robot(QGraphicsItemGroup):
     def __init__(self, mapSize, parent, repr):
         QGraphicsItemGroup.__init__(self)
         # Attributes
+        self.ai = False
         self.__mapSize = mapSize
         self.__parent = parent
         self.__health = 100
@@ -240,8 +241,6 @@ class Robot(QGraphicsItemGroup):
                     if item.robot.__physics.animation.name != "target":
                         # targetSpotted
                         self.__targetSeen(item)
-
-        
 
     ### THESE ARE THE FUNCTIONS ACCESSABLE FROM OUTSIDE ###
 
