@@ -108,14 +108,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.timer.timeout.connect(self.tick)
         self.timer.start(int((self.horizontalSlider.value() ** 2) / 100.0))
         self.resizeEvent()
+        self.current_round = 0
 
     def tick(self):
         for nn in self.nns:
             if nn.bot in self.scene.aliveBots:
                 nn.predict()
         if self.current_round >= ROUND_LIMIT:
-            self.current_round = 0
+            print("round limit reached")
             self.scene.battleFinished()
+            self.current_round = 0
             return
         self.scene.advance()
         self.current_round += 1
@@ -189,8 +191,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 i += 1
 
             self.timer.stop()
-            for nn in self.nns:
-                print(f"{nn.bot}: {nn.rewards}")
+            #for nn in self.nns:
+            #print(f"{nn.bot}: {nn.rewards}")
             self.countBattle = 0
         else:
             print(f"{self.countBattle + 1}. battle started")
