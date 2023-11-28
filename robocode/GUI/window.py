@@ -28,7 +28,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 
-ROUND_LIMIT = 500
+ROUND_LIMIT = 1500
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):

@@ -27,12 +27,12 @@ import numpy as np
 INPUT_SIZE = 13
 OUTPUT_SIZE = 9
 LAYER_PARAMS = (
-    20,
-    10,
+    100,
+    50,
 )
 LEARNING_RATE = 0.01
 REPLAY_BUFFER_CAPACITY = 1000
-COLLECT_STEPS_PER_ITERATION = 10
+COLLECT_STEPS_PER_ITERATION = 100
 BATCH_SIZE = 1
 
 
@@ -109,7 +109,7 @@ class Net:
             num_steps=COLLECT_STEPS_PER_ITERATION,
         )
         iterator = iter(dataset)
-        for _ in range(int(self.num_of_steps_in_episode/COLLECT_STEPS_PER_ITERATION)):
+        for _ in range(int(self.num_of_steps_in_episode/2)):
             trajectories, _ = next(iterator)
             loss = self.agent.train(experience=trajectories)
             # self.losses.append(loss)

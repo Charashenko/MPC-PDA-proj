@@ -139,11 +139,18 @@ class GameEnv(py_environment.PyEnvironment):
         # on target spotted
         if events[6] == 1:
             # self._bot.fire(5)
-            reward += 5
+            reward += 1
             if action_mappings.get(action) in ["fire"]:
                 reward += 15
             else:
                 reward -= 10
+        # firing when no detection
+        if action_mappings.get(action) == "fire":
+            if events[6] == 0:
+                reward -= 10
+            else:
+                reward += 10
+
         return reward
 
     def set_bot_instance(self, bot):
