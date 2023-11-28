@@ -2,3 +2,4 @@ PyQt5
 tensorflow
 reverb
 tf_agents
+matplotlib
