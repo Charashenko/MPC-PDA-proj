@@ -17,10 +17,12 @@ from tf_agents.networks import sequential
 from tf_agents.environments import tf_py_environment
 from tf_agents.replay_buffers import tf_uniform_replay_buffer
 from tf_agents.drivers import dynamic_step_driver
+from tf_agents.trajectories import from_transition
+from tf_agents.trajectories import Trajectory
 
 import random
+import numpy as np
 
-# import reverb
 
 INPUT_SIZE = 13
 OUTPUT_SIZE = 9
@@ -41,6 +43,8 @@ class Net:
         self.train_step_counter = tf.Variable(0)
         self.rewards = []
         self.episode_reward = 0
+        self.num_of_steps_in_episode = 0
+        self.losses = []
 
         self.model = q_network.QNetwork(
             self.env.observation_spec(),
@@ -68,18 +72,9 @@ class Net:
 
     def _conf_replay_buffer(self):
         self.replay_buffer = tf_uniform_replay_buffer.TFUniformReplayBuffer(
-            self.agent.collect_data_spec,
+            self.agent.training_data_spec,
             batch_size=BATCH_SIZE,
             max_length=REPLAY_BUFFER_CAPACITY,
-        )
-
-        self.replay_observer = [self.replay_buffer.add_batch]
-
-        self.collect_op = dynamic_step_driver.DynamicStepDriver(
-            self.env,
-            self.agent.collect_policy,
-            observers=self.replay_observer,
-            num_steps=COLLECT_STEPS_PER_ITERATION,
         )
 
     def _init_policy(self):
@@ -92,21 +87,68 @@ class Net:
         )
 
     def predict(self):
-        print(f"predict: {self.bot}")
         action_step = self.policy.action(self.time_step)
-        self.time_step = self.env.step(action_step.action)
+        new_time_step = self.env.step(action_step.action)
+        trajectory = self.collect_step(self.time_step, action_step, new_time_step)
+        self.time_step = new_time_step
         if self.time_step.is_last():
-            print(f"last: {self.bot}")
-            self.rewards.append(self.episode_reward)
+            # self.rewards.append(self.episode_reward)
             self.episode_reward = 0
+            self.train()
         elif self.time_step.is_first():
-            print(f"first: {self.bot}")
+            self.num_of_steps_in_episode = 0
         else:
+            self.replay_buffer.add_batch(trajectory)
             self.episode_reward += self.time_step.reward
+            self.num_of_steps_in_episode += 1
 
     def train(self):
-        dataset = self.replay_buffer.as_dataset(sample_batch_size=1, num_steps=10)
-        print(dataset)
+        dataset = self.replay_buffer.as_dataset(sample_batch_size=1, num_steps=2)
+        iterator = iter(dataset)
+        for _ in range(int(self.num_of_steps_in_episode / 2)):
+            trajectories, _ = next(iterator)
+            loss = self.agent.train(experience=trajectories)
+            # self.losses.append(loss)
 
     def set_bot(self, bot):
         self.bot = bot
+
+    def collect_step(self, time_step, action_step, next_time_step):
+        trajectory = from_transition(time_step, action_step, next_time_step)
+        action = self._keras_backend(trajectory.action, 2)
+        discount = self._keras_backend(trajectory.discount, 1)
+        next_step_type = self._keras_backend(trajectory.next_step_type, 1)
+        observation = self._keras_backend(trajectory.observation, 2)
+        policy_info = trajectory.policy_info
+        reward = self._keras_backend(trajectory.reward, 1)
+        step_type = self._keras_backend(trajectory.step_type, 2)
+
+        action = tf.constant(action)
+        discount = tf.constant(discount)
+        next_step_type = tf.constant(next_step_type)
+        observation = tf.constant(observation)
+        reward = tf.constant(reward)
+        step_type = tf.constant(step_type)
+
+        values = Trajectory(
+            step_type,
+            observation,
+            action,
+            policy_info,
+            next_step_type,
+            reward,
+            discount,
+        )
+
+        values_batched = tf.nest.map_structure(lambda t: tf.stack([t]), values)
+
+        return values_batched
+
+    def _keras_backend(self, tensor, iterations):
+        data = tf.keras.backend.get_value(tensor)
+        if iterations == 0:
+            return data
+        for i in range(0, iterations):
+            if type(data) is np.ndarray:
+                data = data[0]
+        return data

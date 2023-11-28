@@ -24,6 +24,9 @@ from model.utils import DataProcessor
 from model.net import Net
 from model.game_env import GameEnv
 
+import matplotlib
+import matplotlib.pyplot as plt
+
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     """
@@ -178,10 +181,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             self.timer.stop()
             for nn in self.nns:
-                print(f"{nn.bot}: {len(nn.rewards)}")
+                print(f"{nn.bot}: {nn.rewards}")
             self.countBattle = 0
         else:
-            print(f"{self.countBattle}. battle started")
+            print(f"{self.countBattle + 1}. battle started")
             self.startBattle(self.countBattle)
 
     def repres(self, bot):

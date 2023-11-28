@@ -54,7 +54,7 @@ class GameEnv(py_environment.PyEnvironment):
         return self._observation_spec
 
     def _reset_state(self):
-        return np.zeros([OBSERVATION_SPEC_SIZE])
+        return np.zeros((1, OBSERVATION_SPEC_SIZE))
 
     def _reset(self):
         self._state = self._reset_state()
