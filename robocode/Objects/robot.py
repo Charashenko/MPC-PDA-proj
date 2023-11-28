@@ -595,6 +595,12 @@ class Robot(QGraphicsItemGroup):
         if len(self.__parent.aliveBots) <= 1:
             self.__parent.battleFinished()
 
+    def last_ai_died(self):
+        for nn in self.__parent.Parent.nns:
+            if nn.bot in self.__parent.aliveBots:
+                return False
+        return True
+
     def finish_game(self):
         self.__parent.battleFinished()
 

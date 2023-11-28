@@ -64,6 +64,7 @@ class Net:
             optimizer=self.optimizer,
             td_errors_loss_fn=common.element_wise_squared_loss,
             train_step_counter=self.train_step_counter,
+            n_step_update=COLLECT_STEPS_PER_ITERATION - 1,
         )
 
         self.agent.initialize()
@@ -103,9 +104,12 @@ class Net:
             self.num_of_steps_in_episode += 1
 
     def train(self):
-        dataset = self.replay_buffer.as_dataset(sample_batch_size=1, num_steps=2)
+        dataset = self.replay_buffer.as_dataset(
+            sample_batch_size=1,
+            num_steps=COLLECT_STEPS_PER_ITERATION,
+        )
         iterator = iter(dataset)
-        for _ in range(int(self.num_of_steps_in_episode / 2)):
+        for _ in range(int(self.num_of_steps_in_episode)):
             trajectories, _ = next(iterator)
             loss = self.agent.train(experience=trajectories)
             # self.losses.append(loss)
