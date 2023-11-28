@@ -28,6 +28,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 
+ROUND_LIMIT = 500
+
+
 class MainWindow(QMainWindow, Ui_MainWindow):
     """
     Class documentation goes here.
@@ -44,7 +47,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tableWidget.hide()
         self.nns = []
-        self.round_limit = False
+        self.current_round = 0
 
     @pyqtSlot()
     def on_pushButton_clicked(self):
@@ -110,11 +113,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for nn in self.nns:
             if nn.bot in self.scene.aliveBots:
                 nn.predict()
-        if self.round_limit:
+        if self.current_round >= ROUND_LIMIT:
+            self.current_round = 0
             self.scene.battleFinished()
-            self.round_limit = False
             return
         self.scene.advance()
+        self.current_round += 1
 
     @pyqtSlot(int)
     def on_horizontalSlider_valueChanged(self, value):
