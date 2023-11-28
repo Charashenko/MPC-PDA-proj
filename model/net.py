@@ -109,7 +109,7 @@ class Net:
             num_steps=COLLECT_STEPS_PER_ITERATION,
         )
         iterator = iter(dataset)
-        for _ in range(int(self.num_of_steps_in_episode)):
+        for _ in range(int(self.num_of_steps_in_episode/COLLECT_STEPS_PER_ITERATION)):
             trajectories, _ = next(iterator)
             loss = self.agent.train(experience=trajectories)
             # self.losses.append(loss)

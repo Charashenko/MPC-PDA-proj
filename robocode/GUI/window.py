@@ -44,6 +44,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tableWidget.hide()
         self.nns = []
+        self.round_limit = False
 
     @pyqtSlot()
     def on_pushButton_clicked(self):
@@ -109,6 +110,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for nn in self.nns:
             if nn.bot in self.scene.aliveBots:
                 nn.predict()
+        if self.round_limit:
+            self.scene.battleFinished()
+            self.round_limit = False
+            return
         self.scene.advance()
 
     @pyqtSlot(int)

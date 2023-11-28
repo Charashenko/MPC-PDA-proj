@@ -602,7 +602,7 @@ class Robot(QGraphicsItemGroup):
         return True
 
     def finish_game(self):
-        self.__parent.battleFinished()
+        self.__parent.Parent.round_limit = True
 
     def set_parent(self, parent):
         self.__parent = parent

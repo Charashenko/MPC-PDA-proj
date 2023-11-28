@@ -20,6 +20,7 @@ from utils import get_action_mapping
 
 OBSERVATION_SPEC_SIZE = 13
 ACTION_SPEC_SIZE = 8
+ROUND_LIMIT = 500
 # DEBUG
 OPPS = 10
 # -----
@@ -46,6 +47,7 @@ class GameEnv(py_environment.PyEnvironment):
         self._episode_ended = False
         self._bot = bot
         self._init_num_of_opponents = init_num_of_opponents
+        self.current_round = 0
 
     def action_spec(self):
         return self._action_spec
@@ -67,9 +69,14 @@ class GameEnv(py_environment.PyEnvironment):
         # -----
         reward = 0
         if self._episode_ended:
+            self.current_round = 0
             return self.reset()
 
         self._state = self._bot.get_state()
+
+        if self.current_round >= ROUND_LIMIT:
+            self._bot.finish_game()
+            self._episode_ended = True
 
         if self._bot.get_num_of_opps() == 0 or self._bot.robot_dead:
             self._episode_ended = True
@@ -77,8 +84,9 @@ class GameEnv(py_environment.PyEnvironment):
             self._bot.action_exec(action)
 
         if self._episode_ended:
+            self.current_round = 0
             self._bot.death_ack()
-            reward = self._init_num_of_opponents - self._bot.get_num_of_opps()
+            reward = (self._init_num_of_opponents - self._bot.get_num_of_opps()) * 10
             return ts.termination(
                 np.array([self._state], dtype=np.float64),
                 reward,
@@ -88,6 +96,7 @@ class GameEnv(py_environment.PyEnvironment):
             OPPS -= 1
             # -----
             reward = self._calculate_reward(self._state[-7:], action)
+            self.current_round += 1
             return ts.transition(
                 np.array([self._state], dtype=np.float64),
                 reward=reward,
