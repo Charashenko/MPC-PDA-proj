@@ -103,45 +103,46 @@ class GameEnv(py_environment.PyEnvironment):
         action_mappings = get_action_mapping()
         # on hit by robot
         if events[0] == 1:
-            reward -= 1
+            reward -= 2
             if action_mappings.get(action) not in ["move", "turn"]:
-                reward -= 1
+                reward -= 2
         # on hit wall
         if events[1] == 1:
-            reward -= 1
+            reward -= 2
             if action_mappings.get(action) not in ["turn"]:
-                reward -= 1
+                reward -= 2
         # on robot hit
         if events[2] == 1:
-            reward += 1
+            reward += 5
             if action_mappings.get(action) not in ["fire", "move"]:
-                reward -= 1
+                reward -= 3
             else:
-                reward += 1
+                reward += 3
         # on hit by bullet
         if events[3] == 1:
-            reward -= 2
+            reward -= 3
             if action_mappings.get(action) not in ["move"]:
-                reward -= 1
+                reward -= 5
         # on bullet hit
         if events[4] == 1:
-            reward += 3
+            reward += 10
             if action_mappings.get(action) not in ["fire"]:
-                reward -= 1
+                reward -= 5
             else:
-                reward += 1
+                reward += 5
         # on bullet miss
         if events[5] == 1:
-            reward -= 3
+            reward -= 5
             if action_mappings.get(action) not in ["radarTurn", "gunTurn"]:
-                reward -= 1
+                reward -= 5
         # on target spotted
         if events[6] == 1:
-            self._bot.fire(5)
+            # self._bot.fire(5)
+            reward += 5
             if action_mappings.get(action) in ["fire"]:
-                reward += 2
+                reward += 10
             else:
-                reward -= 1
+                reward -= 2
         return reward
 
     def set_bot_instance(self, bot):

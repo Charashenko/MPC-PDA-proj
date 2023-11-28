@@ -120,7 +120,7 @@ class AI(Robot):
             8: self.fire,
         }
         if action == 8:
-            actions[action](5)
+            actions[action](3)
             return
         action_heading = 1 if action % 2 == 0 else -1
         actions[action](action_heading)
