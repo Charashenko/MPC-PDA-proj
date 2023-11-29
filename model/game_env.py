@@ -5,6 +5,7 @@ from __future__ import print_function
 import abc
 import tensorflow as tf
 import numpy as np
+import random
 
 from tf_agents.environments import py_environment
 from tf_agents.environments import tf_environment
@@ -20,6 +21,9 @@ from utils import get_action_mapping
 
 OBSERVATION_SPEC_SIZE = 13
 ACTION_SPEC_SIZE = 8
+
+RANDOM_FIRE_PROBABILITY = 0.2
+RANDOM_ACTION_PROBABILITY = 0.2
 # DEBUG
 OPPS = 10
 # -----
@@ -75,6 +79,8 @@ class GameEnv(py_environment.PyEnvironment):
         if self._bot.get_num_of_opps() == 0 or self._bot.robot_dead:
             self._episode_ended = True
         else:
+            if random.randint(0,100)/100<RANDOM_ACTION_PROBABILITY:
+                action = random.randint(0,8)
             self._bot.action_exec(action)
 
         if self._episode_ended:
@@ -109,9 +115,11 @@ class GameEnv(py_environment.PyEnvironment):
                 reward -= 2
         # on hit wall
         if events[1] == 1:
-            reward -= 2
+            reward -= 50
             if action_mappings.get(action) not in ["turn"]:
-                reward -= 2
+                reward -= 50
+            else:
+                reward += 50
         # on robot hit
         if events[2] == 1:
             reward += 5
@@ -126,22 +134,24 @@ class GameEnv(py_environment.PyEnvironment):
                 reward -= 5
         # on bullet hit
         if events[4] == 1:
-            reward += 10
+            reward += 20
             if action_mappings.get(action) not in ["fire"]:
-                reward -= 5
+                reward -= 10
             else:
-                reward += 5
+                reward += 50
         # on bullet miss
         if events[5] == 1:
-            reward -= 5
+            reward -= 10
             if action_mappings.get(action) not in ["radarTurn", "gunTurn"]:
                 reward -= 5
         # on target spotted
         if events[6] == 1:
-            # self._bot.fire(5)
+            if random.randint(0, 100)/100 < RANDOM_FIRE_PROBABILITY:
+                self._bot.fire(3)
+                reward += 50
             reward += 1
             if action_mappings.get(action) in ["fire"]:
-                reward += 15
+                reward += 100
             else:
                 reward -= 10
         # firing when no detection
@@ -149,7 +159,13 @@ class GameEnv(py_environment.PyEnvironment):
             if events[6] == 0:
                 reward -= 10
             else:
-                reward += 10
+                reward += 50
+        # move
+        if action_mappings.get(action) == "move":
+            reward += 10
+
+        if action_mappings.get(action) == "radarTurn":
+            reward += 10
 
         return reward
 

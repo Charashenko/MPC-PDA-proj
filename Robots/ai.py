@@ -105,7 +105,8 @@ class AI(Robot):
         return state
 
     def action_exec(self, action):
-        action = action.tolist()
+        if type(action) is np.ndarray:
+            action = action.tolist()
         if type(action) is list:
             action = action[0]
         actions = {
