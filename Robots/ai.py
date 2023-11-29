@@ -23,7 +23,7 @@ import random
 
 class AI(Robot):
     def init(self):
-        self.name = "abcdefghjk"[random.randint(0, 9)].upper()
+        self.name = "abcdefghjklmnopqrstuvwxyz"[random.randint(0, 23)].upper()
         self.ai = True
         self.robot_dead = False
         self.data_processor = DataProcessor(self.getMapSize())
