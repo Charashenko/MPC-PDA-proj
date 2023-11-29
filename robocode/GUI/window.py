@@ -76,14 +76,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.statisticDico = {}
         num_of_opps = len(botList) - 1
         instances = []
-        idx = 2
+        idx = 0
         for bot in botList:
             self.statisticDico[self.repres(bot)] = statistic()
             robot = bot(QSizeF(width, height), None, str(bot))
             instances.append(robot)
             # Setup networks, agents and environments for each bot
             if "AI" in str(bot):
-                self.setup_nn(robot, num_of_opps)
+                idx += 1
+                self.setup_nn(robot, num_of_opps, idx)
         self.botList = instances
         self.startBattle(self.countBattle)
 
@@ -202,11 +203,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         repres = repr(bot).split(".")
         return repres[1].replace("'>", "")
 
-    def setup_nn(self, bot, num_of_opps):
+    def setup_nn(self, bot, num_of_opps, idx):
         env = tf_py_environment.TFPyEnvironment(
             GameEnv(bot=bot, init_num_of_opponents=num_of_opps)
         )
-        nn = Net(env)
+        nn = Net(env, idx)
         self.nns.append(nn)
         bot.set_nn(nn)
         nn.set_bot(bot)

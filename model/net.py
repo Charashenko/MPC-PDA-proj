@@ -22,7 +22,9 @@ from tf_agents.trajectories import Trajectory
 
 import random
 import numpy as np
-
+import pickle
+import os
+import time
 
 INPUT_SIZE = 13
 OUTPUT_SIZE = 9
@@ -34,10 +36,13 @@ LEARNING_RATE = 0.01
 REPLAY_BUFFER_CAPACITY = 1000
 COLLECT_STEPS_PER_ITERATION = 50
 BATCH_SIZE = 1
+CHECKPOINT_DIR = "checkpoints"
+WEIGHTS_FILE = "weights"
 
 
 class Net:
-    def __init__(self, env):
+    def __init__(self, env, number):
+        self.number = number
         self.env = env
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
         self.train_step_counter = tf.Variable(0)
@@ -67,6 +72,7 @@ class Net:
             n_step_update=COLLECT_STEPS_PER_ITERATION - 1,
         )
 
+        self.load_model()
         self.agent.initialize()
         self._conf_replay_buffer()
         self._init_policy()
@@ -109,10 +115,40 @@ class Net:
             num_steps=COLLECT_STEPS_PER_ITERATION,
         )
         iterator = iter(dataset)
-        for _ in range(int(self.num_of_steps_in_episode/COLLECT_STEPS_PER_ITERATION)):
+        for _ in range(int(self.num_of_steps_in_episode / COLLECT_STEPS_PER_ITERATION)):
             trajectories, _ = next(iterator)
             loss = self.agent.train(experience=trajectories)
             # self.losses.append(loss)
+        self.replay_buffer.clear()
+        self.save_model()
+
+    def save_model(self):
+        try:
+            os.mkdir(CHECKPOINT_DIR)
+        except:
+            pass
+        try:
+            pickle.dump(
+                self.model.get_weights(),
+                open(f"{CHECKPOINT_DIR}/{WEIGHTS_FILE}_{self.number}", "wb"),
+            )
+        except:
+            pickle.dump(
+                self.model.get_weights(),
+                open(f"{CHECKPOINT_DIR}/{WEIGHTS_FILE}_{self.number}", "xb"),
+            )
+
+    def load_model(self):
+        try:
+            self.model.set_weights(
+                pickle.load(
+                    open(f"{CHECKPOINT_DIR}/{WEIGHTS_FILE}_{self.number}", "rb")
+                )
+            )
+        except:
+            print(
+                f"Can't load weight file {CHECKPOINT_DIR}/{WEIGHTS_FILE}_{self.number}"
+            )
 
     def set_bot(self, bot):
         self.bot = bot
