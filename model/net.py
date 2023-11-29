@@ -37,6 +37,7 @@ REPLAY_BUFFER_CAPACITY = 1000
 COLLECT_STEPS_PER_ITERATION = 50
 BATCH_SIZE = 1
 CHECKPOINT_DIR = "checkpoints"
+REWARDS_DIR = "rewards"
 WEIGHTS_FILE = "weights"
 
 
@@ -50,6 +51,15 @@ class Net:
         self.episode_reward = 0
         self.num_of_steps_in_episode = 0
         self.losses = []
+
+        try:
+            os.mkdir(CHECKPOINT_DIR)
+        except:
+            pass
+        try:
+            os.mkdir(REWARDS_DIR)
+        except:
+            pass
 
         self.model = q_network.QNetwork(
             self.env.observation_spec(),
@@ -99,11 +109,12 @@ class Net:
         trajectory = self.collect_step(self.time_step, action_step, new_time_step)
         self.time_step = new_time_step
         if self.time_step.is_last():
-            # self.rewards.append(self.episode_reward)
-            self.episode_reward = 0
+            self.episode_reward += self.time_step.reward
+            self.num_of_steps_in_episode += 1
             self.train()
         elif self.time_step.is_first():
             self.num_of_steps_in_episode = 0
+            self.episode_reward = 0
         else:
             self.replay_buffer.add_batch(trajectory)
             self.episode_reward += self.time_step.reward
@@ -121,12 +132,20 @@ class Net:
             # self.losses.append(loss)
         self.replay_buffer.clear()
         self.save_model()
+        self.save_avg_reward()
+
+    def save_avg_reward(self):
+        self.episode_reward = tf.keras.backend.get_value(self.episode_reward).tolist()[
+            0
+        ]
+        try:
+            with open(f"{REWARDS_DIR}/reward_{self.number}", "a") as f:
+                f.write(str(self.episode_reward / self.num_of_steps_in_episode) + "\n")
+        except:
+            with open(f"{REWARDS_DIR}/reward_{self.number}", "x") as f:
+                f.write(str(self.episode_reward / self.num_of_steps_in_episode) + "\n")
 
     def save_model(self):
-        try:
-            os.mkdir(CHECKPOINT_DIR)
-        except:
-            pass
         try:
             pickle.dump(
                 self.model.get_weights(),

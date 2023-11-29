@@ -79,8 +79,8 @@ class GameEnv(py_environment.PyEnvironment):
         if self._bot.get_num_of_opps() == 0 or self._bot.robot_dead:
             self._episode_ended = True
         else:
-            if random.randint(0,100)/100<RANDOM_ACTION_PROBABILITY:
-                action = random.randint(0,8)
+            if random.randint(0, 100) / 100 < RANDOM_ACTION_PROBABILITY:
+                action = random.randint(0, 8)
             self._bot.action_exec(action)
 
         if self._episode_ended:
@@ -146,7 +146,7 @@ class GameEnv(py_environment.PyEnvironment):
                 reward -= 5
         # on target spotted
         if events[6] == 1:
-            if random.randint(0, 100)/100 < RANDOM_FIRE_PROBABILITY:
+            if random.randint(0, 100) / 100 < RANDOM_FIRE_PROBABILITY:
                 self._bot.fire(3)
                 reward += 50
             reward += 1
