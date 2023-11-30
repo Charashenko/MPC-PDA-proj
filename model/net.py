@@ -29,8 +29,9 @@ import time
 INPUT_SIZE = 13
 OUTPUT_SIZE = 9
 LAYER_PARAMS = (
+    100,
+    50,
     25,
-    10,
 )
 LEARNING_RATE = 0.01
 REPLAY_BUFFER_CAPACITY = 1000
@@ -110,7 +111,7 @@ class Net:
         self.time_step = new_time_step
         if self.time_step.is_last():
             self.episode_reward += self.time_step.reward
-            self.num_of_steps_in_episode += 1
+            #self.num_of_steps_in_episode += 1
             self.train()
         elif self.time_step.is_first():
             self.num_of_steps_in_episode = 0
@@ -126,24 +127,28 @@ class Net:
             num_steps=COLLECT_STEPS_PER_ITERATION,
         )
         iterator = iter(dataset)
-        for _ in range(int(self.num_of_steps_in_episode / COLLECT_STEPS_PER_ITERATION)):
+        for _ in range(int(self.num_of_steps_in_episode/COLLECT_STEPS_PER_ITERATION)):
             trajectories, _ = next(iterator)
             loss = self.agent.train(experience=trajectories)
             # self.losses.append(loss)
-        self.replay_buffer.clear()
         self.save_model()
         self.save_avg_reward()
+        self.replay_buffer.clear()
 
     def save_avg_reward(self):
         self.episode_reward = tf.keras.backend.get_value(self.episode_reward).tolist()[
             0
         ]
+        if self.num_of_steps_in_episode == 0:
+            val = 0
+        else:
+            val = self.episode_reward / self.num_of_steps_in_episode
         try:
             with open(f"{REWARDS_DIR}/reward_{self.number}", "a") as f:
-                f.write(str(self.episode_reward / self.num_of_steps_in_episode) + "\n")
+                f.write(str(val) + "\n")
         except:
             with open(f"{REWARDS_DIR}/reward_{self.number}", "x") as f:
-                f.write(str(self.episode_reward / self.num_of_steps_in_episode) + "\n")
+                f.write(str(val) + "\n")
 
     def save_model(self):
         try:

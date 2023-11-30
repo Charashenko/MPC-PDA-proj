@@ -107,7 +107,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.graphicsView.setScene(self.scene)
         self.scene.AddRobots(self.botList)
         self.timer.timeout.connect(self.tick)
-        self.timer.start(int((self.horizontalSlider.value() ** 2) / 100.0))
+        self.timer.start(5)
         self.resizeEvent()
         self.current_round = 0
 
@@ -128,7 +128,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         Slot documentation goes here.
         """
-        self.timer.setInterval(int((value**2) / 100.0))
+        print(value)
+        self.timer.setInterval(5)
 
     @pyqtSlot()
     def on_actionNew_triggered(self):
