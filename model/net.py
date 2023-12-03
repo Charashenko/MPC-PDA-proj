@@ -33,9 +33,9 @@ LAYER_PARAMS = (
     50,
     25,
 )
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.3
 REPLAY_BUFFER_CAPACITY = 1000
-COLLECT_STEPS_PER_ITERATION = 50
+COLLECT_STEPS_PER_ITERATION = 200
 BATCH_SIZE = 1
 CHECKPOINT_DIR = "checkpoints"
 REWARDS_DIR = "rewards"
@@ -80,7 +80,7 @@ class Net:
             optimizer=self.optimizer,
             td_errors_loss_fn=common.element_wise_squared_loss,
             train_step_counter=self.train_step_counter,
-            n_step_update=COLLECT_STEPS_PER_ITERATION - 1,
+            n_step_update=COLLECT_STEPS_PER_ITERATION-1,
         )
 
         self.load_model()
@@ -125,15 +125,26 @@ class Net:
         dataset = self.replay_buffer.as_dataset(
             sample_batch_size=1,
             num_steps=COLLECT_STEPS_PER_ITERATION,
+            single_deterministic_pass=False,
         )
         iterator = iter(dataset)
+        # print(dataset)
+        # try:
+        #     loss = self.agent.train(experience=trajectories)
+        # except:
+        #     print('failed to train')
+        #     pass
         for _ in range(int(self.num_of_steps_in_episode/COLLECT_STEPS_PER_ITERATION)):
-            trajectories, _ = next(iterator)
-            loss = self.agent.train(experience=trajectories)
+            try:
+                trajectories, _ = next(iterator)
+                loss = self.agent.train(experience=trajectories)
+            except:
+                print('failed to train')
+                pass
             # self.losses.append(loss)
         self.save_model()
         self.save_avg_reward()
-        self.replay_buffer.clear()
+        #self.replay_buffer.clear()
 
     def save_avg_reward(self):
         self.episode_reward = tf.keras.backend.get_value(self.episode_reward).tolist()[
@@ -193,6 +204,8 @@ class Net:
         observation = tf.constant(observation)
         reward = tf.constant(reward)
         step_type = tf.constant(step_type)
+
+        # print(f"{self.bot}{action}")
 
         values = Trajectory(
             step_type,

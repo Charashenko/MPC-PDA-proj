@@ -22,7 +22,7 @@ from utils import get_action_mapping
 OBSERVATION_SPEC_SIZE = 13
 ACTION_SPEC_SIZE = 8
 
-RANDOM_FIRE_PROBABILITY = 0.5
+RANDOM_FIRE_PROBABILITY = 0.2
 RANDOM_ACTION_PROBABILITY = 0.2
 # DEBUG
 OPPS = 10
@@ -115,11 +115,11 @@ class GameEnv(py_environment.PyEnvironment):
                 reward -= 2
         # on hit wall
         if events[1] == 1:
-            reward -= 50
+            reward -= 5
             if action_mappings.get(action) not in ["turn"]:
-                reward -= 50
+                reward -= 5
             else:
-                reward += 50
+                reward += 5
         # on robot hit
         if events[2] == 1:
             reward += 5
@@ -134,7 +134,7 @@ class GameEnv(py_environment.PyEnvironment):
                 reward -= 5
         # on bullet hit
         if events[4] == 1:
-            reward += 20
+            reward += 50
             if action_mappings.get(action) not in ["fire"]:
                 reward -= 10
             else:
@@ -149,23 +149,23 @@ class GameEnv(py_environment.PyEnvironment):
             if random.randint(0, 100) / 100 < RANDOM_FIRE_PROBABILITY:
                 self._bot.fire(3)
                 reward += 50
-            reward += 1
+            reward += 10
             if action_mappings.get(action) in ["fire"]:
                 reward += 100
             else:
                 reward -= 10
         # firing when no detection
         if action_mappings.get(action) == "fire":
-            if events[6] == 0:
+            if events[6] == -1:
                 reward -= 10
             else:
                 reward += 50
         # move
         if action_mappings.get(action) == "move":
-            reward += 10
+            reward += 1
 
         if action_mappings.get(action) == "radarTurn":
-            reward += 10
+            reward += 1
 
         return reward
 

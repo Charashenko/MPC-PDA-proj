@@ -91,7 +91,7 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.horizontalSlider.sizePolicy().hasHeightForWidth())
         self.horizontalSlider.setSizePolicy(sizePolicy)
         self.horizontalSlider.setMinimumSize(QSize(200, 0))
-        self.horizontalSlider.setLayoutDirection(Qt.LeftToRight)
+        self.horizontalSlider.setLayoutDirection(Qt.RightToLeft)
         self.horizontalSlider.setMaximum(50)
         self.horizontalSlider.setProperty("value", 25)
         self.horizontalSlider.setOrientation(Qt.Horizontal)

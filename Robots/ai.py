@@ -120,6 +120,8 @@ class AI(Robot):
             7: self.gunTurn,
             8: self.fire,
         }
+        if action > 8:
+            return
         if action == 8:
             actions[action](3)
             return

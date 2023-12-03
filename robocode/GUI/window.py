@@ -90,7 +90,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def startBattle(self, battle_count):
         try:
-            self.timer.timeout.disconnect(self.scene.advance)
+            self.timer.timeout.disconnect(self.tick)
             del self.timer
             del self.scene
             del self.sceneMenu
@@ -107,7 +107,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.graphicsView.setScene(self.scene)
         self.scene.AddRobots(self.botList)
         self.timer.timeout.connect(self.tick)
-        self.timer.start(5)
+        self.timer.start(self.horizontalSlider.value())
         self.resizeEvent()
         self.current_round = 0
 
@@ -129,7 +129,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Slot documentation goes here.
         """
         print(value)
-        self.timer.setInterval(5)
+        self.timer.setInterval(value)
 
     @pyqtSlot()
     def on_actionNew_triggered(self):
